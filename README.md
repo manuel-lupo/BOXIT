@@ -11,7 +11,7 @@ BOXIT is a React Native/Expo time-boxing app for planning focused activities, tr
 ## Install
 
 ```bash
-git clone [paste-link-here]
+git clone https://github.com/manuel-lupo/BOXIT
 cd BOXIT
 npm install
 ```
