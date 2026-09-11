@@ -17,6 +17,9 @@ export const COLORS = {
 
 export const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
+  startupSplash: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
+  startupLogo: { width: 132, height: 132, borderRadius: 36, backgroundColor: COLORS.green, alignItems: 'center', justifyContent: 'center' },
+  startupLogoText: { color: COLORS.background, fontSize: 86, fontWeight: '900', letterSpacing: -5 },
   content: { padding: 22, paddingBottom: 48 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 },
   eyebrow: { color: COLORS.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, marginBottom: 7 },
@@ -71,6 +74,8 @@ export const styles = StyleSheet.create({
   emptyPlus: { color: COLORS.green, fontSize: 20, fontWeight: '300' },
   emptyText: { color: COLORS.muted, fontSize: 12 },
   onboarding: { flex: 1, padding: 28, justifyContent: 'center' },
+  onboardingLanguage: { position: 'absolute', top: 20, right: 28, alignItems: 'flex-end' },
+  languagePrompt: { color: COLORS.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginBottom: 6 },
   logoMark: { width: 46, height: 46, borderRadius: 15, backgroundColor: COLORS.green, alignItems: 'center', justifyContent: 'center', marginBottom: 70 },
   logoText: { color: COLORS.background, fontSize: 28, fontWeight: '900' },
   heroTitle: { color: COLORS.text, fontSize: 40, lineHeight: 45, fontWeight: '800', letterSpacing: -1.5, marginBottom: 17 },
@@ -132,6 +137,9 @@ export const styles = StyleSheet.create({
   settingsValue: { color: COLORS.green, fontSize: 12, fontWeight: '700' },
   resetButton: { marginTop: 35, borderWidth: 1, borderColor: COLORS.danger, borderRadius: 12, padding: 15, alignItems: 'center' },
   resetText: { color: COLORS.danger, fontSize: 13, fontWeight: '700' },
+  languageOptions: { flexDirection: 'row', gap: 8 },
+  languageOption: { color: COLORS.muted, borderWidth: 1, borderColor: COLORS.border, borderRadius: 7, paddingHorizontal: 9, paddingVertical: 5, fontSize: 11, fontWeight: '800' },
+  languageSelected: { color: COLORS.background, backgroundColor: COLORS.green, borderColor: COLORS.green },
   tutorialBackdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#000000B8', zIndex: 10 },
   tutorialBubble: { position: 'absolute', backgroundColor: COLORS.surfaceRaised, borderWidth: 1, borderColor: COLORS.green, borderRadius: 16, padding: 17, width: 250 },
   tutorialPointer: { position: 'absolute', width: 12, height: 12, backgroundColor: COLORS.surfaceRaised, borderLeftWidth: 1, borderTopWidth: 1, borderColor: COLORS.green, transform: [{ rotate: '45deg' }] },

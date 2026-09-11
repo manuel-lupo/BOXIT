@@ -3,9 +3,11 @@ import Svg, { Circle } from 'react-native-svg';
 import { priorityColors, duration } from '../data';
 import { styles } from '../theme';
 import { Task } from '../types';
+import { useLanguage } from '../i18n';
 
 export function TaskCard({ task, onPress, onToggle, isLast, canComplete, progress }: { task: Task; onPress: () => void; onToggle: () => void; isLast: boolean; canComplete: boolean; progress: number }) {
   const skipped = task.status === 'skipped';
+  const { t } = useLanguage();
   return (
     <View style={styles.taskRow}>
       <View style={styles.timeColumn}><Text style={styles.taskTime}>{task.start}</Text><Text style={styles.taskEnd}>{task.end}</Text></View>
@@ -23,9 +25,9 @@ export function TaskCard({ task, onPress, onToggle, isLast, canComplete, progres
         </View>
         <Text style={[styles.taskDescription, skipped && styles.taskTitleSkipped]} numberOfLines={1}>{task.description}</Text>
         <View style={styles.taskMeta}>
-          <Text style={[styles.priorityPill, { color: priorityColors[task.priority] }]}>{task.priority.toUpperCase()}</Text>
+          <Text style={[styles.priorityPill, { color: priorityColors[task.priority] }]}>{t(task.priority === 'Low' ? 'low' : task.priority === 'Focus' ? 'focus' : task.priority === 'High' ? 'high' : 'critical').toUpperCase()}</Text>
           <Text style={styles.duration}>{duration(task.start, task.end)}</Text>
-          {skipped && <Text style={styles.skippedLabel}>SKIPPED</Text>}
+          {skipped && <Text style={styles.skippedLabel}>{t('skippedStatus')}</Text>}
         </View>
       </Pressable>
     </View>

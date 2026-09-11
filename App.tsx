@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, AppState, Modal, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Alert, AppState, Modal, Pressable, Text, View } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Composer } from './src/components/Composer';
 import { HomeScreen } from './src/components/HomeScreen';
 import { HistoryScreen } from './src/components/HistoryScreen';
@@ -9,11 +10,13 @@ import { OnboardingScreen } from './src/components/OnboardingScreen';
 import { PrimaryButton } from './src/components/PrimaryButton';
 import { TaskDetailScreen } from './src/components/TaskDetailScreen';
 import { TutorialOverlay } from './src/components/TutorialOverlay';
+import { StartupSplash } from './src/components/StartupSplash';
 import { styles } from './src/theme';
 import { hasTaskEnded, hasTaskStarted, localDateKey, minutesForTime } from './src/data';
 import { loadState, initialState, saveState } from './src/storage';
 import { Task, TaskDraft } from './src/types';
 import { scheduleTaskNotifications } from './src/notifications';
+import { LanguageProvider, useLanguage } from './src/i18n';
 
 function buildOccurrences(task: Omit<Task, 'id' | 'status'>) {
   const result: Omit<Task, 'id' | 'status'>[] = [];
@@ -30,8 +33,14 @@ function buildOccurrences(task: Omit<Task, 'id' | 'status'>) {
 }
 
 export default function App() {
+  return <LanguageProvider><AppContent /></LanguageProvider>;
+}
+
+function AppContent() {
+  const { language, setLanguage, t } = useLanguage();
   const [name, setName] = useState('');
   const [onboarding, setOnboarding] = useState(true);
+  const [showStartupSplash, setShowStartupSplash] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedDay, setSelectedDay] = useState(1);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -54,10 +63,12 @@ export default function App() {
       setStreak(state.user.streak);
       setLastStreakDate(state.user.lastStreakDate);
       setFailedStreakDate(state.user.failedStreakDate);
+      setLanguage(state.user.language || 'en');
       setOnboarding(!state.user.name);
+      setShowStartupSplash(true);
       setShowTutorial(Boolean(state.user.name && !state.user.tutorialSeen));
       setReady(true);
-      void scheduleTaskNotifications(state.tasks, true);
+      void scheduleTaskNotifications(state.tasks, true, state.user.language || 'en');
     }).catch((error) => {
       console.error('Unable to load BOXIT data', error);
       const state = initialState();
@@ -76,8 +87,8 @@ export default function App() {
 
   useEffect(() => {
     if (!ready) return;
-    saveState({ tasks, user: { name, tutorialSeen: !showTutorial, streak, lastStreakDate, failedStreakDate } }).catch((error) => console.error('Unable to save BOXIT data', error));
-  }, [ready, tasks, name, showTutorial, streak, lastStreakDate, failedStreakDate]);
+    saveState({ tasks, user: { name, tutorialSeen: !showTutorial, streak, lastStreakDate, failedStreakDate, language } }).catch((error) => console.error('Unable to save BOXIT data', error));
+  }, [ready, tasks, name, showTutorial, streak, lastStreakDate, failedStreakDate, language]);
 
   const completeOnboarding = (userName: string) => {
     setName(userName);
@@ -102,13 +113,13 @@ export default function App() {
   const saveTask = (draft: TaskDraft) => {
     const conflict = tasks.some((item) => item.id !== editingTask?.id && item.date === draft.date && overlaps(item, draft));
     if (conflict) {
-      Alert.alert('Time-box overlaps', 'Choose a time that does not overlap another box on this day.');
+      Alert.alert(t('overlapTitle'), t('overlapBody'));
       return;
     }
     if (editingTask) {
       const updated = { ...editingTask, ...draft };
       setTasks((items) => items.map((item) => item.id === editingTask.id ? updated : item));
-      void scheduleTaskNotifications([updated]);
+      void scheduleTaskNotifications([updated], false, language);
       setEditingTask(null);
       return;
     }
@@ -128,7 +139,7 @@ export default function App() {
 
   const addTask = (task: Omit<Task, 'id' | 'status'>) => {
     if (tasks.some((item) => item.date === task.date && overlaps(item, task))) {
-      Alert.alert('Time-box overlaps', 'Choose a time that does not overlap another box on this day.');
+      Alert.alert(t('overlapTitle'), t('overlapBody'));
       return;
     }
     const occurrences = task.recurrenceDays?.length ? buildOccurrences(task) : [task];
@@ -139,23 +150,27 @@ export default function App() {
       setStreak((value) => Math.max(0, value - 1));
       setLastStreakDate(null);
     }
-    void scheduleTaskNotifications(newTasks);
+    void scheduleTaskNotifications(newTasks, false, language);
     setShowComposer(false);
     setComposerDate(undefined);
   };
 
-  if (!ready) return <SafeAreaView style={styles.safeArea}><StatusBar style="light" /></SafeAreaView>;
+  if (!ready) return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /></SafeAreaView></SafeAreaProvider>;
+
+  if (showStartupSplash) {
+    return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /><StartupSplash onFinished={() => setShowStartupSplash(false)} /></SafeAreaView></SafeAreaProvider>;
+  }
 
   if (onboarding) {
-    return <SafeAreaView style={styles.safeArea}><StatusBar style="light" /><OnboardingScreen onComplete={completeOnboarding} /></SafeAreaView>;
+    return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /><OnboardingScreen onComplete={completeOnboarding} /></SafeAreaView></SafeAreaProvider>;
   }
 
   if (selectedTask) {
-    return <SafeAreaView style={styles.safeArea}><StatusBar style="light" /><TaskDetailScreen task={selectedTask} streak={streak} onBack={() => setSelectedTask(null)} onToggle={() => toggleTask(selectedTask)} onSkip={() => skipTask(selectedTask)} onEdit={() => { if (canEditTask(selectedTask)) { setEditingTask(selectedTask); setSelectedTask(null); } }} /></SafeAreaView>;
+    return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /><TaskDetailScreen task={selectedTask} streak={streak} onBack={() => setSelectedTask(null)} onToggle={() => toggleTask(selectedTask)} onSkip={() => skipTask(selectedTask)} onEdit={() => { if (canEditTask(selectedTask)) { setEditingTask(selectedTask); setSelectedTask(null); } }} /></SafeAreaView></SafeAreaProvider>;
   }
 
   if (showComposer || editingTask) {
-    return <SafeAreaView style={styles.safeArea}><StatusBar style="light" /><Composer defaultDate={composerDate} initialTask={editingTask || undefined} onClose={() => { setShowComposer(false); setEditingTask(null); setComposerDate(undefined); }} onSave={saveTask} /></SafeAreaView>;
+    return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /><Composer defaultDate={composerDate} initialTask={editingTask || undefined} onClose={() => { setShowComposer(false); setEditingTask(null); setComposerDate(undefined); }} onSave={saveTask} /></SafeAreaView></SafeAreaProvider>;
   }
 
   function overlaps(a: Pick<Task, 'start' | 'end'>, b: Pick<Task, 'start' | 'end'>) {
@@ -163,30 +178,31 @@ export default function App() {
   }
 
   if (showHistory) {
-    return <SafeAreaView style={styles.safeArea}><StatusBar style="light" /><HistoryScreen tasks={tasks} onBack={() => setShowHistory(false)} /></SafeAreaView>;
+    return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /><HistoryScreen tasks={tasks} onBack={() => setShowHistory(false)} /></SafeAreaView></SafeAreaProvider>;
   }
 
   if (showSettings) {
-    return <SafeAreaView style={styles.safeArea}><StatusBar style="light" /><SettingsScreen onBack={() => setShowSettings(false)} onReset={() => { setName(''); setTasks([]); setStreak(0); setLastStreakDate(null); setFailedStreakDate(null); setShowSettings(false); setOnboarding(true); }} /></SafeAreaView>;
+    return <SafeAreaProvider><SafeAreaView style={styles.safeArea}><StatusBar style="light" /><SettingsScreen onBack={() => setShowSettings(false)} onReset={() => { setName(''); setTasks([]); setStreak(0); setLastStreakDate(null); setFailedStreakDate(null); setLanguage('en'); setShowSettings(false); setOnboarding(true); setShowStartupSplash(true); }} onLanguageChange={setLanguage} /></SafeAreaView></SafeAreaProvider>;
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaProvider><SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
       <HomeScreen name={name} tasks={tasks} streak={streak} selectedDay={selectedDay} onDayChange={setSelectedDay} onTaskPress={setSelectedTask} onTaskToggle={toggleTask} onAdd={(date) => { setComposerDate(date); setShowComposer(true); }} onProfile={() => setShowProfile(true)} />
       {showTutorial && <TutorialOverlay onDone={() => setShowTutorial(false)} />}
       <Modal visible={showProfile} animationType="slide" transparent onRequestClose={() => setShowProfile(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#00000099' }}>
           <View style={styles.profileSheet}>
-            <Text style={styles.eyebrow}>YOUR BOXIT</Text>
+            <Text style={styles.eyebrow}>{t('profile')}</Text>
             <Text style={styles.profileTitle}>{name || 'Friend'}</Text>
-            <Text style={styles.profileCopy}>Keep showing up. Small boxes become big momentum.</Text>
-            <Pressable style={{ marginTop: 25 }} onPress={() => { setShowProfile(false); setShowHistory(true); }}><Text style={styles.addText}>View your history →</Text></Pressable>
-            <Pressable style={{ marginTop: 18 }} onPress={() => { setShowProfile(false); setShowSettings(true); }}><Text style={styles.addText}>Settings →</Text></Pressable>
-            <PrimaryButton label="Done" onPress={() => setShowProfile(false)} />
+            <Text style={styles.profileCopy}>{t('streakBody')}</Text>
+            <Pressable style={{ marginTop: 25 }} onPress={() => { setShowProfile(false); setShowHistory(true); }}><Text style={styles.addText}>{t('viewHistory')}</Text></Pressable>
+            <Pressable style={{ marginTop: 18 }} onPress={() => { setShowProfile(false); setShowSettings(true); }}><Text style={styles.addText}>{t('settingsLink')}</Text></Pressable>
+            <Pressable style={{ marginTop: 18 }} onPress={() => { setShowProfile(false); setShowTutorial(true); }}><Text style={styles.addText}>{t('replayTutorial')} →</Text></Pressable>
+            <PrimaryButton label={t('close')} onPress={() => setShowProfile(false)} />
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeAreaView></SafeAreaProvider>
   );
 }

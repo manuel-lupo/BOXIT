@@ -3,7 +3,7 @@ import * as SQLite from 'expo-sqlite';
 import { today } from './data';
 import { Task, UserState } from './types';
 
-const userDefaults: UserState = { name: '', tutorialSeen: false, streak: 0, lastStreakDate: null, failedStreakDate: null };
+const userDefaults: UserState = { name: '', tutorialSeen: false, streak: 0, lastStreakDate: null, failedStreakDate: null, language: 'en' };
 const browserKey = 'boxit-state-v2';
 
 type PersistedState = { tasks: Task[]; user: UserState };

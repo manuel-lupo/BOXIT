@@ -4,6 +4,7 @@ import { daysFromToday } from '../data';
 import { COLORS, styles } from '../theme';
 import { Task } from '../types';
 import { TaskCard } from './TaskCard';
+import { useLanguage } from '../i18n';
 
 function hasEnded(task: Task) {
   const now = new Date();
@@ -27,6 +28,7 @@ function timing(task: Task, now: Date) {
 
 export function HomeScreen({ name, tasks, streak, selectedDay, onDayChange, onTaskPress, onTaskToggle, onAdd, onProfile }: { name: string; tasks: Task[]; streak: number; selectedDay: number; onDayChange: (index: number) => void; onTaskPress: (task: Task) => void; onTaskToggle: (task: Task) => void; onAdd: (date: string) => void; onProfile: () => void }) {
   const [now, setNow] = useState(() => new Date());
+  const { t } = useLanguage();
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
@@ -39,11 +41,11 @@ export function HomeScreen({ name, tasks, streak, selectedDay, onDayChange, onTa
   const progress = visibleTasks.length ? Math.round((completed / visibleTasks.length) * 100) : 0;
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}><View><Text style={styles.eyebrow}>{todayLabel}</Text><Text style={styles.greeting}>Good morning, {name || 'friend'}.</Text></View><Pressable style={styles.avatar} onPress={onProfile}><Text style={styles.avatarText}>{(name[0] || 'B').toUpperCase()}</Text></Pressable></View>
-      <View style={styles.statsRow}><View style={styles.statCard}><Text style={styles.statLabel}>TODAY'S SCORE</Text><Text style={styles.statValue}>{progress}<Text style={styles.statUnit}>%</Text></Text><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View></View><View style={styles.statCard}><Text style={styles.statLabel}>CURRENT STREAK</Text><Text style={styles.statValue}>{streak} <Text style={styles.flame}>✦</Text></Text><Text style={styles.statHint}>days in a row</Text></View></View>
-      <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Your day</Text><Pressable onPress={() => onAdd(currentDay.key)}><Text style={styles.addText}>+ Add box</Text></Pressable></View>
+      <View style={styles.header}><View><Text style={styles.eyebrow}>{todayLabel}</Text><Text style={styles.greeting}>{t('goodMorning', { name: name || 'friend' })}</Text></View><Pressable accessibilityLabel={t('profile')} style={styles.avatar} onPress={onProfile}><Text style={styles.avatarText}>{(name[0] || 'B').toUpperCase()}</Text></Pressable></View>
+      <View style={styles.statsRow}><View style={styles.statCard}><Text style={styles.statLabel}>{t('todayScore')}</Text><Text style={styles.statValue}>{progress}<Text style={styles.statUnit}>%</Text></Text><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View></View><View style={styles.statCard}><Text style={styles.statLabel}>{t('currentStreak')}</Text><Text style={styles.statValue}>{streak} <Text style={styles.flame}>✦</Text></Text><Text style={styles.statHint}>{t('daysInRow')}</Text></View></View>
+      <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>{t('day')}</Text><Pressable onPress={() => onAdd(currentDay.key)}><Text style={styles.addText}>{t('addBox')}</Text></Pressable></View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayPicker}>{days.map((day, index) => <Pressable key={day.date} onPress={() => onDayChange(index)} style={[styles.day, selectedDay === index && styles.daySelected]}><Text style={[styles.dayLabel, selectedDay === index && styles.daySelectedText]}>{day.label}</Text><Text style={[styles.dayDate, selectedDay === index && styles.daySelectedText]}>{day.date}</Text>{index === 1 && <View style={styles.todayDot} />}</Pressable>)}</ScrollView>
-      <View style={styles.timeline}><Text style={styles.timelineDate}>{currentDay.offset === 0 ? 'TODAY' : `${currentDay.label} · ${currentDay.key}`}</Text>{visibleTasks.map((task, index) => { const state = timing(task, now); return <TaskCard key={task.id} task={task} onPress={() => onTaskPress(task)} onToggle={() => onTaskToggle(task)} canComplete={state.canComplete} progress={state.progress} isLast={index === visibleTasks.length - 1} />; })}<Pressable style={styles.emptyBox} onPress={() => onAdd(currentDay.key)}><Text style={styles.emptyPlus}>+</Text><Text style={styles.emptyText}>Make room for something new</Text></Pressable></View>
+      <View style={styles.timeline}><Text style={styles.timelineDate}>{currentDay.offset === 0 ? t('today') : `${currentDay.label} · ${currentDay.key}`}</Text>{visibleTasks.map((task, index) => { const state = timing(task, now); return <TaskCard key={task.id} task={task} onPress={() => onTaskPress(task)} onToggle={() => onTaskToggle(task)} canComplete={state.canComplete} progress={state.progress} isLast={index === visibleTasks.length - 1} />; })}<Pressable style={styles.emptyBox} onPress={() => onAdd(currentDay.key)}><Text style={styles.emptyPlus}>+</Text><Text style={styles.emptyText}>{t('makeRoom')}</Text></Pressable></View>
     </ScrollView>
   );
 }

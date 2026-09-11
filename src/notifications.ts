@@ -1,12 +1,12 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Task } from './types';
+import { Language } from './i18n';
 
 type NotificationEvent = { timestamp: number; message: string };
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
@@ -14,7 +14,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-function buildEvents(tasks: Task[]): NotificationEvent[] {
+function buildEvents(tasks: Task[], language: Language): NotificationEvent[] {
   const events = new Map<number, string[]>();
   tasks.forEach((task) => {
     const start = new Date(`${task.date}T${task.start}:00`);
@@ -22,19 +22,21 @@ function buildEvents(tasks: Task[]): NotificationEvent[] {
     const previous = tasks.find((candidate) => candidate.date === task.date && candidate.end === task.start);
     if (task.reminderBeforeStart) {
       const timestamp = start.getTime() - 5 * 60 * 1000;
-      const message = previous ? `Stop ${previous.title} and start ${task.title}` : `Starting soon: ${task.title}`;
+      const message = language === 'es'
+        ? previous ? `Termina ${previous.title} y comienza ${task.title}` : `Próximo bloque: ${task.title}`
+        : previous ? `Stop ${previous.title} and start ${task.title}` : `Starting soon: ${task.title}`;
       events.set(timestamp, [...(events.get(timestamp) || []), message]);
     }
     if (task.reminderAtEnd) {
       const timestamp = end.getTime();
-      events.set(timestamp, [...(events.get(timestamp) || []), `You can now mark “${task.title}” as completed.`]);
+      events.set(timestamp, [...(events.get(timestamp) || []), language === 'es' ? `Ya puedes marcar “${task.title}” como completado.` : `You can now mark “${task.title}” as completed.`]);
     }
   });
   return Array.from(events.entries()).map(([timestamp, messages]) => ({ timestamp, message: messages.join(' · ') }));
 }
 
-export async function scheduleTaskNotifications(tasks: Task[], replaceExisting = false) {
-  const events = buildEvents(tasks).filter((event) => event.timestamp > Date.now());
+export async function scheduleTaskNotifications(tasks: Task[], replaceExisting = false, language: Language = 'en') {
+  const events = buildEvents(tasks, language).filter((event) => event.timestamp > Date.now());
   if (Platform.OS === 'web') {
     if (typeof Notification === 'undefined') return;
     if (Notification.permission !== 'granted' && await Notification.requestPermission() !== 'granted') return;

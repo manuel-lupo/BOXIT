@@ -23,6 +23,7 @@ export type UserState = {
   streak: number;
   lastStreakDate: string | null;
   failedStreakDate: string | null;
+  language: 'en' | 'es';
 };
 
 export type TaskDraft = Omit<Task, 'id' | 'status'>;
