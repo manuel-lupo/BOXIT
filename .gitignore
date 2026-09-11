@@ -41,5 +41,7 @@ yarn-error.*
 /android
 
 # misc
+.gitignore
 AGENTS.md
 CLAUDE.md
+marketing/
