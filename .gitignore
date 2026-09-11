@@ -41,5 +41,5 @@ yarn-error.*
 /android
 
 # misc
-/AGENTS.md
-/CLAUDE.md
+AGENTS.md
+CLAUDE.md
